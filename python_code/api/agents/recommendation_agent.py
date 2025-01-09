@@ -23,7 +23,26 @@ class RecommendationAgent():
         self.products = self.popular_recommendations["product"].tolist()
         self.product_categories = list(set(self.popular_recommendations["product_category"].tolist()))
 
+    # Popular recommendation
+    def get_popular_recommendation(self, product_categories=None, top_k=5):
+        recommendation_df = self.popular_recommendations
 
+        if type(product_categories) == str:
+            product_categories = [product_categories]
+
+        if product_categories is not None:
+            recommendation_df = self.popular_recommendations[self.popular_recommendations["product_category"].isin(product_categories)]
+        
+        recommendation_df = recommendation_df.sort_values("number_of_transactions", ascending=False)
+
+        if recommendation_df.shape[0] == 0:
+            return []
+        
+        recommendations = recommendation_df["product"].tolist()[:top_k]
+
+        return recommendations
+        
+    # Apriori recommendation
     def get_apriori_recommendation(self, products, top_k=5):
         recommendation_list = []
         
@@ -60,28 +79,8 @@ class RecommendationAgent():
         
         return recommendations
 
-        
 
-
-
-    def get_popular_recommendation(self, product_categories=None, top_k=5):
-        recommendation_df = self.popular_recommendations
-
-        if type(product_categories) == str:
-            product_categories = [product_categories]
-
-        if product_categories is not None:
-            recommendation_df = self.popular_recommendations[self.popular_recommendations["product_category"].isin(product_categories)]
-        
-        recommendation_df = recommendation_df.sort_values("number_of_transactions", ascending=False)
-
-        if recommendation_df.shape[0] == 0:
-            return []
-        
-        recommendations = recommendation_df["product"].tolist()[:top_k]
-
-        return recommendations
-    
+    # Recommendation classification
     def recommendation_classification(self, message):
         system_prompt = """
         You are a helpful AI assistant for a coffee shop application  which serves drinks and pastries. We have 3 types of recommendations:
@@ -94,7 +93,7 @@ class RecommendationAgent():
         Here is the list of categories we have in the coffee shop:
         """ + ",".join(self.product_categories) + """
 
-        Your task is to determin which type of recommendation to provide based on the user's message.
+        Your task is to determine which type of recommendation to provide based on the user's message.
 
         Your output should be in a structured json format like so. Each key is a string, and each value is a string. Make sure to follew the format exactly:
         {
@@ -112,6 +111,7 @@ class RecommendationAgent():
         output = self.postprocess_classification(chatbot_output)
         return output
     
+
     def postprocess_classification(self, output):
         output = json.loads(output)
         
@@ -122,12 +122,13 @@ class RecommendationAgent():
 
         return dict_output
 
+
     def get_recommendations_from_order(self, messages, order):
         messages = deepcopy(messages)
         products = []
 
         for product in order:
-            products.append(product)
+            products.append(product["item"])
 
         recommendations = self.get_apriori_recommendation(products)
         recommendation_str = ", ".join(recommendations)
@@ -154,6 +155,7 @@ class RecommendationAgent():
 
         output = self.postprocess(chatbot_output)
         return output
+
 
     def get_response(self, messages):
         messages = deepcopy(messages)

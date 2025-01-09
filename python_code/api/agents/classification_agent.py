@@ -25,19 +25,17 @@ class ClassificationAgent():
         2. order_taking_agent: This agent is responsible for taking orders from the user. It's responsible for having a conversation with the user about the order until it's complete.
         3. recommendation_agent: This agent is responsible for giving recommendations to the user about what to buy. If the user asks for a recommendation, this agent should be used.
         
+        Produce the following output without any additions, not a single letter outside of the structure below.
         Your output should be in a structured json format like so. each key is a string and each value is a string. Make sure to follow to format exactly:
         {
             "chain of thought": "go over each of the agents above and write some of your thoughts about which agent is the input relevant to",
             "decision": "details_agent" or "order_taking_agent" or "recommendation_agent". Pick one of those. and only write the word,
-            "message": leave the message empty ""
+            "message": leave the message empty
         }
         """
 
-        input_messages = [
-            {"role": "system", "content": system_prompt}
-        ]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
 
-        input_messages += messages[-3:]
 
         chatbot_output = get_chatbot_response(self.client, self.model_name, input_messages)
         chatbot_output = double_check_json_output(self.client, self.model_name, chatbot_output)

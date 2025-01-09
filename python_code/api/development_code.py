@@ -3,10 +3,10 @@ from agents import (GuardAgent,
                     DetailsAgent,
                     AgentProtocol,
                     RecommendationAgent,
+                    OrderTakingAgent
                     )
 from typing import Dict
 import os
-import sys
 import pathlib
 
 folder_path = pathlib.Path(__file__).parent.resolve()
@@ -14,14 +14,15 @@ folder_path = pathlib.Path(__file__).parent.resolve()
 def main():
     guard_agent = GuardAgent()
     classification_agent = ClassificationAgent()
-    
-    agent_dict: Dict[str, AgentProtocol] = {
-        "details_agent": DetailsAgent(),
-        "recommendation_agent": RecommendationAgent(
+    recommendation_agent = RecommendationAgent(
                                 os.path.join(folder_path, "recommendation_objects/apriori_recommendations.json"), 
                                 os.path.join(folder_path, "recommendation_objects/popularity_recommendations.csv")
                                 )
-
+    
+    agent_dict: Dict[str, AgentProtocol] = {
+        "details_agent": DetailsAgent(),
+        "recommendation_agent": recommendation_agent,
+        "order_taking_agent": OrderTakingAgent(recommendation_agent)
     }
 
     messages = []
@@ -48,11 +49,12 @@ def main():
         # Get classification agent's response
         classification_agent_response = classification_agent.get_response(messages)
         chosen_agent = classification_agent_response["memory"]["classification_decision"]
-        print("Chosen agent: ", chosen_agent)
+        print("Classification output: ", chosen_agent)
 
         # Get chosen agent's response
         agent = agent_dict[chosen_agent]
         response = agent.get_response(messages)
+        print("Agent output: ", response)
 
         messages.append(response)
 
